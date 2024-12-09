@@ -1,0 +1,238 @@
+[
+    {
+        "label": "Flask",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "request",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "jsonify",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "Flask",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "request",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "jsonify",
+        "importPath": "flask",
+        "description": "flask",
+        "isExtraImport": true,
+        "detail": "flask",
+        "documentation": {}
+    },
+    {
+        "label": "pandas",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "pandas",
+        "description": "pandas",
+        "detail": "pandas",
+        "documentation": {}
+    },
+    {
+        "label": "sqlite3",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "sqlite3",
+        "description": "sqlite3",
+        "detail": "sqlite3",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "numpy",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "numpy",
+        "description": "numpy",
+        "detail": "numpy",
+        "documentation": {}
+    },
+    {
+        "label": "init_db",
+        "kind": 2,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "def init_db():\n    conn = sqlite3.connect(DB_PATH)\n    cursor = conn.cursor()\n    # Create table if it doesn't exist\n    cursor.execute('''\n        CREATE TABLE IF NOT EXISTS trades (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            timestamp TEXT,\n            signal TEXT,\n            reason TEXT",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "save_trade",
+        "kind": 2,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "def save_trade(signal, reason):\n    conn = sqlite3.connect(DB_PATH)\n    cursor = conn.cursor()\n    timestamp = datetime.utcnow().isoformat()  # UTC timestamp\n    cursor.execute('INSERT INTO trades (timestamp, signal, reason) VALUES (?, ?, ?)', (timestamp, signal, reason))\n    conn.commit()\n    conn.close()\n# Get all trades from SQLite\ndef get_all_trades():\n    conn = sqlite3.connect(DB_PATH)",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "get_all_trades",
+        "kind": 2,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "def get_all_trades():\n    conn = sqlite3.connect(DB_PATH)\n    cursor = conn.cursor()\n    cursor.execute('SELECT * FROM trades ORDER BY timestamp DESC')\n    trades = cursor.fetchall()\n    conn.close()\n    return trades\n# Transform nested JSON into a DataFrame\ndef transform_data(json_data):\n    time_series = json_data.get(\"Time Series (1min)\", {})",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "transform_data",
+        "kind": 2,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "def transform_data(json_data):\n    time_series = json_data.get(\"Time Series (1min)\", {})\n    if not time_series:\n        return pd.DataFrame()  # Return an empty DataFrame if no data is found\n    # Convert time-series data into a DataFrame\n    records = []\n    for timestamp, values in time_series.items():\n        record = {\n            \"timestamp\": timestamp,\n            \"open\": float(values[\"1. open\"]),",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "process_data",
+        "kind": 2,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "def process_data():\n    data = request.get_json()\n    if not data:\n        return jsonify({\"error\": \"Invalid data\"}), 400\n    df = transform_data(data)\n    if df.empty:\n        return jsonify({\"error\": \"No valid time-series data\"}), 400\n    # Calculate EMAs\n    df['short_ema'] = df['close'].ewm(span=12, adjust=False).mean()\n    df['long_ema'] = df['close'].ewm(span=26, adjust=False).mean()",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "get_trades",
+        "kind": 2,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "def get_trades():\n    trades = get_all_trades()\n    return jsonify([\n        {\"id\": t[0], \"timestamp\": t[1], \"signal\": t[2], \"reason\": t[3]} for t in trades\n    ])\nif __name__ == '__main__':\n    init_db()  # Initialize the database\n    app.run(host='0.0.0.0', port=3300)",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "app",
+        "kind": 5,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "app = Flask(__name__)\nDB_PATH = 'trades.db'\n# Initialize SQLite Database\ndef init_db():\n    conn = sqlite3.connect(DB_PATH)\n    cursor = conn.cursor()\n    # Create table if it doesn't exist\n    cursor.execute('''\n        CREATE TABLE IF NOT EXISTS trades (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "DB_PATH",
+        "kind": 5,
+        "importPath": "tradingBot2",
+        "description": "tradingBot2",
+        "peekOfCode": "DB_PATH = 'trades.db'\n# Initialize SQLite Database\ndef init_db():\n    conn = sqlite3.connect(DB_PATH)\n    cursor = conn.cursor()\n    # Create table if it doesn't exist\n    cursor.execute('''\n        CREATE TABLE IF NOT EXISTS trades (\n            id INTEGER PRIMARY KEY AUTOINCREMENT,\n            timestamp TEXT,",
+        "detail": "tradingBot2",
+        "documentation": {}
+    },
+    {
+        "label": "process_data",
+        "kind": 2,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "def process_data(data):\n    df = pd.DataFrame(data).T.rename(columns={\n        \"1. open\": \"open\",\n        \"2. high\": \"high\",\n        \"3. low\": \"low\",\n        \"4. close\": \"close\",\n        \"5. volume\": \"volume\"\n    }).astype(float)\n    # Add EMA for trading strategy\n    df[\"short_ema\"] = df[\"close\"].ewm(span=12, adjust=False).mean()",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "execute_trades",
+        "kind": 2,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "def execute_trades(data):\n    global cash, holdings, trade_log\n    last_row = data.iloc[-1]\n    if last_row[\"short_ema\"] > last_row[\"long_ema\"] and cash > last_row[\"close\"]:\n        # Buy signal\n        holdings += 1\n        cash -= last_row[\"close\"]\n        trade_log.append(f\"BUY at {last_row['close']}\")\n    elif last_row[\"short_ema\"] < last_row[\"long_ema\"] and holdings > 0:\n        # Sell signal",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "welcome",
+        "kind": 2,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "def welcome():\n    return \"Welcome to the trading bot!\"\n@app.route('/data-new', methods=['POST'])\ndef receive_data_new():\n    json_data = request.get_json()\n    print(json_data)\n@app.route('/data', methods=['POST'])\ndef receive_data():\n    json_data = request.get_json()\n    print(json_data)",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "receive_data_new",
+        "kind": 2,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "def receive_data_new():\n    json_data = request.get_json()\n    print(json_data)\n@app.route('/data', methods=['POST'])\ndef receive_data():\n    json_data = request.get_json()\n    print(json_data)\n    if \"Time Series (1min)\" in json_data:\n        print(\"inside\")\n        data = process_data(json_data[\"Time Series (1min)\"])",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "receive_data",
+        "kind": 2,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "def receive_data():\n    json_data = request.get_json()\n    print(json_data)\n    if \"Time Series (1min)\" in json_data:\n        print(\"inside\")\n        data = process_data(json_data[\"Time Series (1min)\"])\n        result = execute_trades(data)\n        return jsonify(result)\n    else:\n        return jsonify({\"error\": \"Invalid data format\"})",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "app",
+        "kind": 5,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "app = Flask(__name__)\n# Trading variables\ncash = 10000  # Initial cash\nholdings = 0  # Stocks held\ntrade_log = []\ndef process_data(data):\n    df = pd.DataFrame(data).T.rename(columns={\n        \"1. open\": \"open\",\n        \"2. high\": \"high\",\n        \"3. low\": \"low\",",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "cash",
+        "kind": 5,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "cash = 10000  # Initial cash\nholdings = 0  # Stocks held\ntrade_log = []\ndef process_data(data):\n    df = pd.DataFrame(data).T.rename(columns={\n        \"1. open\": \"open\",\n        \"2. high\": \"high\",\n        \"3. low\": \"low\",\n        \"4. close\": \"close\",\n        \"5. volume\": \"volume\"",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "holdings",
+        "kind": 5,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "holdings = 0  # Stocks held\ntrade_log = []\ndef process_data(data):\n    df = pd.DataFrame(data).T.rename(columns={\n        \"1. open\": \"open\",\n        \"2. high\": \"high\",\n        \"3. low\": \"low\",\n        \"4. close\": \"close\",\n        \"5. volume\": \"volume\"\n    }).astype(float)",
+        "detail": "tradingbot",
+        "documentation": {}
+    },
+    {
+        "label": "trade_log",
+        "kind": 5,
+        "importPath": "tradingbot",
+        "description": "tradingbot",
+        "peekOfCode": "trade_log = []\ndef process_data(data):\n    df = pd.DataFrame(data).T.rename(columns={\n        \"1. open\": \"open\",\n        \"2. high\": \"high\",\n        \"3. low\": \"low\",\n        \"4. close\": \"close\",\n        \"5. volume\": \"volume\"\n    }).astype(float)\n    # Add EMA for trading strategy",
+        "detail": "tradingbot",
+        "documentation": {}
+    }
+]
