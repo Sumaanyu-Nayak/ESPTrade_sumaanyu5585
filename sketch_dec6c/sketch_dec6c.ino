@@ -1,97 +1,116 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <WiFiClientSecure.h>
+#include <Arduino_JSON.h>
 
 // WiFi credentials
-const char* ssid = "Sharanagati";
-const char* password = "nirvana123";
+const char* ssid = "Your_SSID";
+const char* password = "Your_PASSWORD";
 
-// API and Backend URLs
-const char* alphaVantageApiUrl = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAPL&interval=1min&apikey=TR9PI01Q7OW018TD";
-const char* backendUrl = "http://192.168.1.3:3300/data-new";
+// API URLs
+const char* alphaVantageUrl = "https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=AAPL&interval=1min&apikey=your_api_key";
+const char* serverUrl = "http://<your-python-server-ip>:3300/process-data";
 
+// Simulation Variables
+float cash = 10000.00; // Starting cash balance
+int holdings = 0;      // Number of shares owned
+float stockPrice = 0.00; // Latest stock price
+
+// Timing Variables
 unsigned long previousMillis = 0;
-const long interval = 120000; // Fetch data every 2 minutes
+const long interval = 60000; // Fetch data every minute
 
 void setup() {
   Serial.begin(115200);
-
-  // Connect to WiFi
   WiFi.begin(ssid, password);
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
   Serial.println("Connected to WiFi");
-  Serial.println(WiFi.localIP());
 }
 
 void loop() {
   unsigned long currentMillis = millis();
-  // Serial.println("In loop");
-  fetchAndSendData();
-  delay(interval);
-  // if (currentMillis - previousMillis >= interval) {
-  //   previousMillis = currentMillis;
-  //   Serial.println("Starting");
-  //   fetchAndSendData();
-  // }
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    fetchStockData();
+  }
 }
 
-void fetchAndSendData() {
+void fetchStockData() {
   if (WiFi.status() == WL_CONNECTED) {
-    WiFiClientSecure client;
-    client.setInsecure(); // For simplicity, disable certificate validation (use CA certificates for better security)
     HTTPClient http;
+    WiFiClientSecure client;
+    client.setInsecure(); // Disable SSL certificate validation for simplicity
 
-    Serial.println("Fetching stock data from Alpha Vantage...");
+    http.begin(client, alphaVantageUrl);
 
-    http.begin(client, alphaVantageApiUrl);
     int httpResponseCode = http.GET();
-
-    if (httpResponseCode > 0) {
-      Serial.printf("HTTP Response Code: %d\n", httpResponseCode);
+    if (httpResponseCode == 200) {
       String response = http.getString();
+      Serial.println("Stock data fetched successfully:");
+      Serial.println(response);
 
-      if (httpResponseCode == 200) {
-        Serial.println("Data fetched successfully");
-        sendDataToBackend(response);
-      } else {
-        Serial.println("Error in API response");
-        Serial.println(response);
-      }
+      // Parse and send data to Python server
+      sendDataToServer(response);
     } else {
-      Serial.printf("Error fetching data: %s\n", http.errorToString(httpResponseCode).c_str());
+      Serial.printf("Error fetching stock data: %d\n", httpResponseCode);
     }
-
     http.end();
   } else {
     Serial.println("WiFi not connected");
   }
 }
 
-void sendDataToBackend(String jsonData) {
-  Serial.println(jsonData);
+void sendDataToServer(String stockData) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     WiFiClient client;
 
-    Serial.println("Sending data to backend...");
-
-    http.begin(client, backendUrl);
+    http.begin(client, serverUrl);
     http.addHeader("Content-Type", "application/json");
 
-    int httpResponseCode = http.POST(jsonData);
+    int httpResponseCode = http.POST(stockData);
     if (httpResponseCode > 0) {
-      Serial.printf("Data sent successfully. Response Code: %d\n", httpResponseCode);
       String response = http.getString();
-      Serial.println("Backend Response: " + response);
-    } else {
-      Serial.printf("Error sending data: %s\n", http.errorToString(httpResponseCode).c_str());
-    }
+      Serial.println("Decision received from server:");
+      Serial.println(response);
 
+      // Execute trade based on server's decision
+      executeTrade(response);
+    } else {
+      Serial.printf("Error sending data to server: %d\n", httpResponseCode);
+    }
     http.end();
   } else {
     Serial.println("WiFi not connected");
+  }
+}
+
+void executeTrade(String response) {
+  JSONVar jsonResponse = JSON.parse(response);
+  if (JSON.typeof(jsonResponse) == "undefined") {
+    Serial.println("Parsing error");
+    return;
+  }
+
+  String signal = jsonResponse["signal"];
+  String reason = jsonResponse["reason"];
+  stockPrice = jsonResponse["status"]["stock_price"]; // Update stock price if included
+  Serial.println("Trade Signal: " + signal);
+  Serial.println("Reason: " + reason);
+
+  // Execute trade based on the signal
+  if (signal == "BUY" && cash >= stockPrice) {
+    holdings += 1;
+    cash -= stockPrice;
+    Serial.printf("Executed BUY: New Cash = $%.2f, Holdings = %d\n", cash, holdings);
+  } else if (signal == "SELL" && holdings > 0) {
+    holdings -= 1;
+    cash += stockPrice;
+    Serial.printf("Executed SELL: New Cash = $%.2f, Holdings = %d\n", cash, holdings);
+  } else {
+    Serial.println("No trade executed (HOLD or insufficient funds/holdings)");
   }
 }
